@@ -5,7 +5,8 @@ import Login from './components/Login';
 import AccountSummary from './components/AccountSummary';
 import TradeForm from './components/TradeForm';
 import PositionsTable from './components/PositionsTable';
-import { TrendingUp, LayoutDashboard, History, Settings, LogOut } from 'lucide-react';
+import HistoryTable from './components/HistoryTable';
+import { TrendingUp, LayoutDashboard, History, Settings, LogOut, Activity } from 'lucide-react';
 
 function Dashboard() {
   const { login, setLogin } = useTrading();
@@ -49,18 +50,16 @@ function Dashboard() {
         <AccountSummary />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Content Area - Positions Table */}
+          {/* Main Content Area */}
           <div className="lg:col-span-8 space-y-8">
              <div className="flex items-center gap-2 mb-2">
-                <LayoutDashboard className="h-5 w-5 text-blue-500" />
-                <h2 className="text-xl font-bold text-white">Market Overview</h2>
+                <Activity className="h-5 w-5 text-blue-500" />
+                <h2 className="text-xl font-bold text-white">Live Activity</h2>
              </div>
+
              <PositionsTable />
 
-             {/* Future extensions could include charts here */}
-             <div className="rounded-2xl bg-slate-900/50 border border-slate-800 border-dashed h-48 flex items-center justify-center">
-                <p className="text-slate-500 text-sm">Real-time Charting (Coming Soon)</p>
-             </div>
+             <HistoryTable />
           </div>
 
           {/* Sidebar Area - Trade Form */}

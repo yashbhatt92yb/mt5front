@@ -25,6 +25,10 @@ export const userService = {
     const response = await api.post('/user/info', { login });
     return response.data;
   },
+  getHistory: async (login, from = 0, to = 0) => {
+    const response = await api.post('/user/history', { login, from, to });
+    return response.data;
+  }
 };
 
 export const tradeService = {

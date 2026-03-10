@@ -12,6 +12,7 @@ export const TradingProvider = ({ children }) => {
     profit: 0,
   });
   const [positions, setPositions] = useState([]);
+  const [history, setHistory] = useState([]);
   const [quotes, setQuotes] = useState({});
 
   const updateAccountData = useCallback((data) => {
@@ -35,14 +36,16 @@ export const TradingProvider = ({ children }) => {
   }, []);
 
   const updatePositions = useCallback((data) => {
-    // Backend often wraps data in { success: true, data: [...] }
     const positionsArray = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
     setPositions(positionsArray);
   }, []);
 
+  const updateHistory = useCallback((data) => {
+    const historyArray = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
+    setHistory(historyArray);
+  }, []);
+
   const handlePositionUpdate = useCallback((update) => {
-      // update.action could be 'update', 'close', etc.
-      // Based on the C++ backend: BroadcastPositionUpdate("update", position)
       if (!update || !update.data) return;
 
       setPositions(prev => {
@@ -70,6 +73,8 @@ export const TradingProvider = ({ children }) => {
     updateAccountData,
     positions,
     updatePositions,
+    history,
+    updateHistory,
     handlePositionUpdate,
     quotes,
     updateQuotes,
