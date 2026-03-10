@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useTrading } from '../context/TradingContext';
 import { userService, tradeService } from '../services/api';
 import { XCircle, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
@@ -8,23 +8,23 @@ const PositionsTable = () => {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
 
-  const fetchPositions = async () => {
+  const fetchPositions = useCallback(async () => {
+    if (!login) return;
     setLoading(true);
     try {
-      const data = await userService.getPositions(parseInt(login));
-      updatePositions(data);
+      const response = await userService.getPositions(parseInt(login));
+      // updatePositions now handles the response structure
+      updatePositions(response);
     } catch (err) {
       console.error('Failed to fetch positions', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [login, updatePositions]);
 
   useEffect(() => {
-    if (login) {
-      fetchPositions();
-    }
-  }, [login]);
+    fetchPositions();
+  }, [fetchPositions]);
 
   const handleClose = async (pos) => {
     setActionLoading(pos.ticket);
@@ -34,12 +34,11 @@ const PositionsTable = () => {
         ticket: pos.ticket,
         symbol: pos.symbol,
         volume: pos.volume,
-        type: pos.type === 0 ? 1 : 0, // opposite type to close
+        type: pos.type === 0 ? 1 : 0,
       });
       if (result.success) {
-        // Optimistic update if needed, but WS handles it
-        // Or simply refresh
-        // fetchPositions();
+        // WS should handle the update, but a refresh doesn't hurt for reliability
+        setTimeout(fetchPositions, 500);
       }
     } catch (err) {
       console.error('Failed to close trade', err);
@@ -107,7 +106,7 @@ const PositionsTable = () => {
                   <td className={`px-6 py-4 text-right font-bold ${
                     pos.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'
                   }`}>
-                    {pos.profit >= 0 ? '+' : ''}{pos.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {pos.profit >= 0 ? '+' : ''}{pos.profit?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button

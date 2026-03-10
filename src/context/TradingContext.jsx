@@ -15,10 +15,19 @@ export const TradingProvider = ({ children }) => {
   const [quotes, setQuotes] = useState({});
 
   const updateAccountData = useCallback((data) => {
-    setAccountData((prev) => ({ ...prev, ...data }));
+    if (!data) return;
+    setAccountData((prev) => ({
+      ...prev,
+      balance: data.balance ?? prev.balance,
+      equity: data.equity ?? prev.equity,
+      margin: data.margin ?? prev.margin,
+      free_margin: data.free_margin ?? prev.free_margin,
+      profit: data.profit ?? prev.profit,
+    }));
   }, []);
 
   const updateQuotes = useCallback((symbol, data) => {
+    if (!symbol || !data) return;
     setQuotes((prev) => ({
       ...prev,
       [symbol]: data,
@@ -26,25 +35,29 @@ export const TradingProvider = ({ children }) => {
   }, []);
 
   const updatePositions = useCallback((data) => {
-    setPositions(data);
+    // Backend often wraps data in { success: true, data: [...] }
+    const positionsArray = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
+    setPositions(positionsArray);
   }, []);
 
   const handlePositionUpdate = useCallback((update) => {
       // update.action could be 'update', 'close', etc.
-      // For simplicity, we can fetch all positions again or update the specific one.
-      // Based on common MT5 gateway patterns, 'update' often carries the whole object.
+      // Based on the C++ backend: BroadcastPositionUpdate("update", position)
+      if (!update || !update.data) return;
+
       setPositions(prev => {
-          if (update.action === 'update') {
-              const index = prev.findIndex(p => p.ticket === update.data.ticket);
+          const positionData = update.data;
+          if (update.action === 'update' || update.action === 'open') {
+              const index = prev.findIndex(p => p.ticket === positionData.ticket);
               if (index !== -1) {
                   const newPositions = [...prev];
-                  newPositions[index] = update.data;
+                  newPositions[index] = { ...newPositions[index], ...positionData };
                   return newPositions;
               } else {
-                  return [...prev, update.data];
+                  return [...prev, positionData];
               }
           } else if (update.action === 'close') {
-              return prev.filter(p => p.ticket !== update.data.ticket);
+              return prev.filter(p => p.ticket !== positionData.ticket);
           }
           return prev;
       });

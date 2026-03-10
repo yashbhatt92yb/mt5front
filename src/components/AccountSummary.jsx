@@ -1,9 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTrading } from '../context/TradingContext';
+import { userService } from '../services/api';
 import { Wallet, TrendingUp, ShieldCheck, PieChart } from 'lucide-react';
 
 const AccountSummary = () => {
-  const { accountData } = useTrading();
+  const { login, accountData, updateAccountData } = useTrading();
+
+  useEffect(() => {
+    const fetchAccountInfo = async () => {
+      if (!login) return;
+      try {
+        const response = await userService.getInfo(parseInt(login));
+        if (response.success && response.data) {
+          updateAccountData(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch account info', err);
+      }
+    };
+
+    fetchAccountInfo();
+  }, [login, updateAccountData]);
 
   const metrics = [
     {
@@ -47,7 +64,7 @@ const AccountSummary = () => {
             <div>
               <p className="text-sm font-medium text-slate-400">{metric.label}</p>
               <p className={`mt-2 text-2xl font-bold tracking-tight ${metric.color}`}>
-                ${metric.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${metric.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${metric.bg}`}>

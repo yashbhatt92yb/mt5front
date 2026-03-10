@@ -21,21 +21,22 @@ export const userService = {
     const response = await api.post('/user/positions', { login });
     return response.data;
   },
+  getInfo: async (login) => {
+    const response = await api.post('/user/info', { login });
+    return response.data;
+  },
 };
 
 export const tradeService = {
   placeOrder: async (order) => {
-    // order: { login, symbol, volume, type, sl, tp }
     const response = await api.post('/trade/place', order);
     return response.data;
   },
   placePendingOrder: async (order) => {
-    // order: { login, symbol, volume, type, price, stop_limit_price }
     const response = await api.post('/trade/place_pending', order);
     return response.data;
   },
   closeTrade: async (trade) => {
-    // trade: { login, ticket, symbol, volume, type }
     const response = await api.post('/trade/close', trade);
     return response.data;
   },
@@ -43,6 +44,10 @@ export const tradeService = {
     const response = await api.post('/trade/cancel', { login, ticket });
     return response.data;
   },
+  modifyTrade: async (modifyData) => {
+    const response = await api.post('/trade/modify', modifyData);
+    return response.data;
+  }
 };
 
 export default api;

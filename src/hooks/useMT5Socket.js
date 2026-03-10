@@ -11,6 +11,7 @@ export const useMT5Socket = () => {
   const connect = useCallback(() => {
     if (!login) return;
 
+    console.log(`Connecting to WebSocket at ${WS_URL} for login ${login}...`);
     socketRef.current = new WebSocket(WS_URL);
 
     socketRef.current.onopen = () => {
@@ -34,17 +35,26 @@ export const useMT5Socket = () => {
         const message = JSON.parse(event.data);
         const { type, data, s, b, a } = message;
 
+        if (type !== 'quote') {
+            console.log('WS Message:', message);
+        }
+
         switch (type) {
-          case 'account_live':
-            updateAccountData(data);
+          case 'account':
+          case 'account_live': {
+            const updateLogin = data.login || data.Login;
+            if (!updateLogin || parseInt(updateLogin) === parseInt(login)) {
+                updateAccountData(data);
+            }
             break;
+          }
           case 'quote':
-            // data from quote: { "type": "quote", "s": "EURUSD", "b": 1.10, "a": 1.11 }
             updateQuotes(s, { bid: b, ask: a });
             break;
           case 'position':
-            // data from position: { "type": "position", "action": "update", "data": {...} }
-            handlePositionUpdate(message);
+            if (data && (!data.login || parseInt(data.login) === parseInt(login))) {
+                handlePositionUpdate(message);
+            }
             break;
           default:
             break;
@@ -57,15 +67,32 @@ export const useMT5Socket = () => {
     socketRef.current.onclose = () => {
       console.log('MT5 WebSocket closed. Attempting to reconnect...');
       reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
+        // Use a function reference that is stable or check how to best call this
+        // To avoid lint error we can use the ref or just be careful.
+        // Actually since it is a useCallback, it is fine to call it by name but lint is strict.
+        if (socketRef.current && socketRef.current.readyState === WebSocket.CLOSED) {
+           // We'll call connect indirectly or just ignore this specific lint for now if we can
+        }
       }, 3000);
     };
 
     socketRef.current.onerror = (err) => {
       console.error('WebSocket error:', err);
-      socketRef.current.close();
     };
   }, [login, updateAccountData, updateQuotes, handlePositionUpdate]);
+
+  // Handle reconnection outside to avoid circular dependency in lint
+  useEffect(() => {
+    if (!login) return;
+
+    const checkConnection = setInterval(() => {
+       if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+          connect();
+       }
+    }, 5000);
+
+    return () => clearInterval(checkConnection);
+  }, [login, connect]);
 
   useEffect(() => {
     connect();
